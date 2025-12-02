@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 from typing import List, Tuple, Optional, Dict
 import pickle
+import logging
 
 
 class CameraCalibrator:
@@ -60,7 +61,7 @@ class CameraCalibrator:
         for img_path in image_paths:
             img = cv2.imread(img_path)
             if img is None:
-                print(f"Warning: Could not read image {img_path}")
+                logging.warning(f"Could not read image {img_path}")
                 continue
             
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -83,7 +84,7 @@ class CameraCalibrator:
                 corners_refined = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                 imgpoints.append(corners_refined)
             else:
-                print(f"Warning: Checkerboard not found in {img_path}")
+                logging.warning(f"Checkerboard not found in {img_path}")
         
         if len(objpoints) < 3:
             raise ValueError("Need at least 3 successful checkerboard detections for calibration")
@@ -176,7 +177,7 @@ class CameraCalibrator:
                 imgpoints.append(corners_refined)
                 
                 frames_used += 1
-                print(f"Found checkerboard in frame {frame_count} ({frames_used}/{num_frames})")
+                logging.info(f"Found checkerboard in frame {frame_count} ({frames_used}/{num_frames})")
         
         cap.release()
         
@@ -283,7 +284,7 @@ class CameraCalibrator:
         with open(filepath, 'wb') as f:
             pickle.dump(calibration_data, f)
         
-        print(f"Calibration saved to {filepath}")
+        logging.info(f"Calibration saved to {filepath}")
     
     def load_calibration(self, filepath: str):
         """
@@ -303,7 +304,7 @@ class CameraCalibrator:
         self.square_size = calibration_data['square_size']
         self.calibrated = True
         
-        print(f"Calibration loaded from {filepath}")
+        logging.info(f"Calibration loaded from {filepath}")
     
     def estimate_camera_params_from_fov(self, image_width: int, 
                                        image_height: int,

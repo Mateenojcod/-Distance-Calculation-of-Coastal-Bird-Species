@@ -13,6 +13,10 @@ import cv2
 import numpy as np
 from typing import Tuple, Optional, List, Dict
 from scipy.spatial import distance as scipy_distance
+import logging
+
+# Minimum angle threshold for ground plane distance calculation (radians)
+MIN_ANGLE_THRESHOLD = 0.01  # Avoids division by zero/near-zero in tan calculation
 
 # Deep learning depth estimation
 try:
@@ -35,7 +39,8 @@ class DistanceEstimator:
     - 'ground_plane': Estimation using ground plane assumption
     """
     
-    def __init__(self, method: str = 'pinhole', camera_params: Optional[Dict] = None):
+    def __init__(self, method: str = 'pinhole', camera_params: Optional[Dict] = None,
+                 lazy_load: bool = True):
         """
         Initialize distance estimator.
         
@@ -46,6 +51,7 @@ class DistanceEstimator:
                 - sensor_width: Sensor width in mm (optional)
                 - sensor_height: Sensor height in mm (optional)
                 - baseline: Stereo baseline distance in meters (for stereo method)
+            lazy_load: If True, delay loading deep learning models until first use
         """
         self.method = method
         self.camera_params = camera_params or {}
@@ -54,17 +60,18 @@ class DistanceEstimator:
         if 'focal_length' not in self.camera_params:
             self.camera_params['focal_length'] = 800  # pixels
         
-        # Load depth estimation model if using deep learning
-        if method == 'deep_learning' and PYTORCH_AVAILABLE:
+        # Load depth estimation model if using deep learning (unless lazy loading)
+        self.depth_model = None
+        if method == 'deep_learning' and PYTORCH_AVAILABLE and not lazy_load:
             self.depth_model = self._load_depth_model()
-        else:
-            self.depth_model = None
     
     def _load_depth_model(self):
         """
         Load monocular depth estimation model.
         Uses MiDaS or similar model for depth prediction.
         """
+        import logging
+        
         try:
             # MiDaS depth estimation model
             model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
@@ -75,8 +82,8 @@ class DistanceEstimator:
             self.depth_transform = transforms.small_transform
             
             return model
-        except Exception as e:
-            print(f"Warning: Could not load depth model: {e}")
+        except (RuntimeError, ConnectionError, OSError) as e:
+            logging.warning(f"Could not load depth model: {e}")
             return None
     
     def estimate_distance_pinhole(self, real_height: float, 
@@ -166,8 +173,14 @@ class DistanceEstimator:
         Returns:
             Depth map as numpy array
         """
-        if not PYTORCH_AVAILABLE or self.depth_model is None:
-            raise RuntimeError("PyTorch and depth model required for this method")
+        if not PYTORCH_AVAILABLE:
+            raise RuntimeError("PyTorch required for depth estimation. Install with: pip install torch")
+        
+        # Lazy load depth model if not already loaded
+        if self.depth_model is None:
+            self.depth_model = self._load_depth_model()
+            if self.depth_model is None:
+                raise RuntimeError("Failed to load depth estimation model")
         
         # Convert BGR to RGB
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -245,7 +258,7 @@ class DistanceEstimator:
         total_angle = np.radians(camera_angle) + angle_offset
         
         # Calculate distance on ground
-        if np.cos(total_angle) > 0.01:  # Avoid division by zero
+        if np.cos(total_angle) > MIN_ANGLE_THRESHOLD:
             distance = camera_height / np.tan(total_angle)
         else:
             distance = float('inf')

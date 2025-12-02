@@ -236,6 +236,8 @@ class BirdClassifier:
         elif self.method == 'sklearn':
             # Use best model from sklearn ensemble
             model = self.model.get('random_forest')
+            if model is None:
+                raise RuntimeError("Random Forest model not found in sklearn ensemble")
             predictions = model.predict_proba(processed_image)[0]
         
         elif self.method == 'ensemble':

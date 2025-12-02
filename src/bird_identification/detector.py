@@ -29,6 +29,9 @@ try:
 except ImportError:
     DETECTRON2_AVAILABLE = False
 
+# Constants for model configurations
+DEFAULT_DETECTRON2_MODEL_CONFIG = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
+
 # TensorFlow
 try:
     import tensorflow as tf
@@ -45,34 +48,44 @@ class BirdDetector:
     Returns bounding boxes, confidence scores, and class labels.
     """
     
-    def __init__(self, method: str = 'yolo', confidence_threshold: float = 0.5):
+    def __init__(self, method: str = 'yolo', confidence_threshold: float = 0.5,
+                 model_path: Optional[str] = None, lazy_load: bool = False):
         """
         Initialize the bird detector.
         
         Args:
             method: Detection method ('yolo', 'detectron2', 'tensorflow')
             confidence_threshold: Minimum confidence for detections
+            model_path: Path to custom model (None = use default pre-trained)
+            lazy_load: If True, delay loading model until first use
         """
         self.method = method
         self.confidence_threshold = confidence_threshold
+        self.model_path = model_path
         self.model = None
         
-        if method == 'yolo' and YOLO_AVAILABLE:
+        if not lazy_load:
+            self._load_model()
+    
+    def _load_model(self):
+        """Load the appropriate detection model based on method."""
+        if self.method == 'yolo' and YOLO_AVAILABLE:
             self.model = self._load_yolo_model()
-        elif method == 'detectron2' and DETECTRON2_AVAILABLE:
+        elif self.method == 'detectron2' and DETECTRON2_AVAILABLE:
             self.model = self._load_detectron2_model()
-        elif method == 'tensorflow' and TENSORFLOW_AVAILABLE:
+        elif self.method == 'tensorflow' and TENSORFLOW_AVAILABLE:
             self.model = self._load_tensorflow_model()
         else:
-            raise ValueError(f"Method {method} not supported or dependencies not installed")
+            raise ValueError(f"Method {self.method} not supported or dependencies not installed")
     
     def _load_yolo_model(self) -> YOLO:
         """
         Load YOLOv8 model for bird detection.
         Can be fine-tuned for specific bird species.
         """
-        # Load pre-trained model (can be replaced with custom trained model)
-        model = YOLO('yolov8n.pt')  # nano version for speed
+        # Use custom model path if provided, otherwise use pre-trained
+        model_path = self.model_path if self.model_path else 'yolov8n.pt'
+        model = YOLO(model_path)  # nano version for speed
         # For better accuracy, use: YOLO('yolov8m.pt') or YOLO('yolov8l.pt')
         return model
     
@@ -83,10 +96,16 @@ class BirdDetector:
         """
         cfg = get_cfg()
         cfg.merge_from_file(
-            model_zoo.get_config_file("COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml")
+            model_zoo.get_config_file(DEFAULT_DETECTRON2_MODEL_CONFIG)
         )
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.confidence_threshold
-        cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml")
+        
+        # Use custom weights if provided, otherwise use default checkpoint
+        if self.model_path:
+            cfg.MODEL.WEIGHTS = self.model_path
+        else:
+            cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(DEFAULT_DETECTRON2_MODEL_CONFIG)
+        
         predictor = DefaultPredictor(cfg)
         return predictor
     
@@ -112,6 +131,10 @@ class BirdDetector:
             - class_name: detected class name
             - class_id: detected class ID
         """
+        # Lazy load model if not already loaded
+        if self.model is None:
+            self._load_model()
+        
         if self.method == 'yolo':
             return self._detect_yolo(image)
         elif self.method == 'detectron2':
