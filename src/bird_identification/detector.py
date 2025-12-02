@@ -11,7 +11,7 @@ Supports multiple detection frameworks:
 
 import cv2
 import numpy as np
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any, TYPE_CHECKING
 
 # YOLOv8
 try:
@@ -19,6 +19,11 @@ try:
     YOLO_AVAILABLE = True
 except ImportError:
     YOLO_AVAILABLE = False
+    # Create placeholder for type hints
+    if TYPE_CHECKING:
+        from ultralytics import YOLO
+    else:
+        YOLO = Any
 
 # Detectron2
 try:

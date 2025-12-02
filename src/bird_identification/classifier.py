@@ -9,7 +9,7 @@ This module provides multiple classification algorithms for coastal bird species
 """
 
 import numpy as np
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Any, TYPE_CHECKING
 import cv2
 
 # TensorFlow/Keras approach
@@ -25,6 +25,11 @@ try:
     TENSORFLOW_AVAILABLE = True
 except ImportError:
     TENSORFLOW_AVAILABLE = False
+    # Create placeholder for type hints when TensorFlow not available
+    if TYPE_CHECKING:
+        from tensorflow.keras.models import Model
+    else:
+        Model = Any
 
 # PyTorch approach
 try:
@@ -36,6 +41,12 @@ try:
     PYTORCH_AVAILABLE = True
 except ImportError:
     PYTORCH_AVAILABLE = False
+    # Create placeholder for type hints
+    if TYPE_CHECKING:
+        import torch.nn as nn
+    else:
+        class nn:
+            Module = Any
 
 # Scikit-learn approach
 try:
