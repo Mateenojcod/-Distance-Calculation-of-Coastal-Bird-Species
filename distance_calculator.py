@@ -64,17 +64,30 @@ class VideoDistanceProcessor:
     Process video files and calculate distances to detected objects.
     """
     
-    def __init__(self, distance_calculator):
+    # Default detection parameters
+    DEFAULT_MIN_CONTOUR_AREA = 500
+    DEFAULT_HISTORY = 500
+    DEFAULT_VAR_THRESHOLD = 50
+    
+    def __init__(self, distance_calculator, min_contour_area=None, 
+                 bg_history=None, bg_var_threshold=None):
         """
         Initialize the video processor.
         
         Args:
             distance_calculator (DistanceCalculator): An instance of DistanceCalculator
+            min_contour_area (int, optional): Minimum contour area to filter noise (default: 500)
+            bg_history (int, optional): Background subtractor history parameter (default: 500)
+            bg_var_threshold (int, optional): Background subtractor variance threshold (default: 50)
         """
         self.calculator = distance_calculator
+        self.min_contour_area = min_contour_area or self.DEFAULT_MIN_CONTOUR_AREA
+        bg_history = bg_history or self.DEFAULT_HISTORY
+        bg_var_threshold = bg_var_threshold or self.DEFAULT_VAR_THRESHOLD
+        
         self.detector = cv2.createBackgroundSubtractorMOG2(
-            history=500, 
-            varThreshold=50, 
+            history=bg_history, 
+            varThreshold=bg_var_threshold, 
             detectShadows=True
         )
         
@@ -113,7 +126,7 @@ class VideoDistanceProcessor:
         largest_contour = max(contours, key=cv2.contourArea)
         
         # Filter out small contours (noise)
-        if cv2.contourArea(largest_contour) < 500:
+        if cv2.contourArea(largest_contour) < self.min_contour_area:
             return 0, None, frame
         
         # Get bounding rectangle
