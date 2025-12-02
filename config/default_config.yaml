@@ -1,0 +1,96 @@
+# Default Configuration for Coastal Bird Species Identification
+
+# Camera Parameters
+camera:
+  focal_length: 800  # pixels
+  image_width: 1920
+  image_height: 1080
+  horizontal_fov: 60  # degrees
+  camera_height: 2.0  # meters above ground
+  camera_angle: 0  # degrees (0 = horizontal)
+  baseline: 0.1  # meters (for stereo vision)
+
+# Bird Detection Settings
+detection:
+  method: yolo  # Options: yolo, detectron2, tensorflow
+  confidence_threshold: 0.5
+  model_path: null  # Path to custom model (null = use default)
+  
+# Bird Classification Settings
+classification:
+  method: tensorflow  # Options: tensorflow, pytorch, sklearn, ensemble
+  num_classes: 10
+  model_path: null  # Path to trained model
+  class_names:
+    - Seagull
+    - Pelican
+    - Cormorant
+    - Tern
+    - Sandpiper
+    - Plover
+    - Oystercatcher
+    - Albatross
+    - Petrel
+    - Heron
+
+# Distance Estimation Settings
+distance:
+  method: pinhole  # Options: pinhole, stereo, deep_learning, size_based, ground_plane
+  calibration_file: null  # Path to camera calibration file
+  use_calibration: false
+  
+# Bird Size Database (in meters)
+bird_sizes:
+  seagull:
+    width: 0.50
+    height: 0.40
+    wingspan: 1.30
+  pelican:
+    width: 0.80
+    height: 0.70
+    wingspan: 2.50
+  cormorant:
+    width: 0.60
+    height: 0.50
+    wingspan: 1.20
+  tern:
+    width: 0.30
+    height: 0.25
+    wingspan: 0.80
+  sandpiper:
+    width: 0.20
+    height: 0.15
+    wingspan: 0.40
+  plover:
+    width: 0.25
+    height: 0.20
+    wingspan: 0.60
+  oystercatcher:
+    width: 0.40
+    height: 0.35
+    wingspan: 0.90
+  albatross:
+    width: 1.20
+    height: 0.90
+    wingspan: 3.50
+  petrel:
+    width: 0.35
+    height: 0.30
+    wingspan: 0.90
+  heron:
+    width: 0.60
+    height: 0.80
+    wingspan: 1.80
+
+# Video Processing Settings
+video:
+  skip_frames: 1  # Process every nth frame
+  output_annotated: true
+  save_results: true
+  
+# Output Settings
+output:
+  save_detections: true
+  save_distances: true
+  save_visualizations: true
+  output_directory: ./output

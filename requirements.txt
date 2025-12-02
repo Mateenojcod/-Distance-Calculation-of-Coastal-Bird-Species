@@ -1,0 +1,41 @@
+# Core Machine Learning Libraries
+tensorflow>=2.13.0
+torch>=2.0.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Computer Vision and Video Processing
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+mediapipe>=0.10.0
+imutils>=0.5.4
+Pillow>=10.0.0
+
+# Object Detection and Tracking
+ultralytics>=8.0.0  # YOLOv8 for bird detection
+detectron2>=0.6  # Facebook's detection framework
+supervision>=0.16.0  # For tracking and annotation
+
+# Distance Estimation Libraries
+scipy>=1.11.0
+filterpy>=1.4.5  # Kalman filtering for tracking
+
+# Deep Learning Frameworks for Classification
+keras>=2.13.0
+timm>=0.9.0  # PyTorch Image Models
+
+# Data Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Video Analysis
+moviepy>=1.0.3
+
+# Utilities
+pyyaml>=6.0
+tqdm>=4.65.0
+joblib>=1.3.0
+
+# Optional: Pre-trained models
+torchvision>=0.15.0
